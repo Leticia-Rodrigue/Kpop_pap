@@ -1,0 +1,234 @@
+:root {
+    --p-neon: #ff00ff; /* Rosa */
+    --c-neon: #00d4ff; /* Ciano */
+    --bg-dark: #050505;
+    --sidebar-bg: #000000;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.08);
+}
+
+.admin-body {
+    margin: 0;
+    background: var(--bg-dark);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+}
+
+/* Sidebar */
+.sidebar-master {
+    width: 260px;
+    height: 100vh;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    padding: 40px 20px;
+}
+
+.sidebar-brand {
+    color: var(--p-neon);
+    font-weight: 800;
+    letter-spacing: 3px;
+    margin-bottom: 50px;
+    padding-left: 15px;
+}
+
+.nav-link {
+    display: block;
+    padding: 15px;
+    color: #888;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.3s;
+    margin-bottom: 5px;
+}
+
+.nav-link:hover, .nav-link.active {
+    background: var(--card-bg);
+    color: #fff;
+}
+
+.nav-link.active {
+    border-left: 3px solid var(--p-neon);
+    color: var(--p-neon);
+}
+
+.logout-link { color: #ff4d4d; margin-top: 40px; }
+
+/* Main Content */
+.admin-main {
+    margin-left: 260px;
+    padding: 60px;
+    width: 100%;
+}
+
+/* Stats */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin-bottom: 50px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 15px;
+    border: 1px solid var(--border);
+}
+
+.stat-card h3 { font-size: 0.7rem; color: #666; text-transform: uppercase; margin: 0; }
+.stat-value { font-size: 2.5rem; font-weight: 800; margin-top: 10px; }
+.stat-card.cyan .stat-value { color: var(--c-neon); }
+.stat-card.pink .stat-value { color: var(--p-neon); }
+.stat-card.green .stat-value { color: #00ff00; }
+
+/* Table */
+.master-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.master-table th {
+    background: rgba(255, 255, 255, 0.05);
+    text-align: left;
+    padding: 20px;
+    font-size: 0.8rem;
+    color: #555;
+}
+
+.master-table td {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Badges & Form */
+.badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+.badge.master { background: rgba(255, 0, 255, 0.1); color: var(--p-neon); }
+.badge.admin { background: rgba(0, 212, 255, 0.1); color: var(--c-neon); }
+
+select {
+    background: #111;
+    color: #fff;
+    border: 1px solid #333;
+    padding: 6px;
+    border-radius: 4px;
+}
+
+button {
+    background: none;
+    border: 1px solid var(--c-neon);
+    color: var(--c-neon);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover { background: var(--c-neon); color: #000; }
+
+/* Grelha de Produtos no Admin */
+.products-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.product-item {
+    text-align: center;
+    transition: 0.3s;
+}
+
+.product-item:hover {
+    border-color: var(--p-neon);
+    transform: translateY(-5px);
+}
+
+.product-item .img-wrapper {
+    height: 150px;
+    margin-bottom: 15px;
+    background: #000;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.product-item img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+}
+
+.product-item h4 {
+    font-size: 0.9rem;
+    margin: 10px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.price-tag {
+    color: var(--c-neon);
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.delete-link {
+    display: block;
+    margin-top: 15px;
+    font-size: 0.7rem;
+    color: #ff4d4d;
+    text-decoration: none;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+.delete-link:hover { text-decoration: underline; }
+
+/* Inputs e Botões do Formulário */
+.master-form-grid input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    background: #111;
+    border: 1px solid #333;
+    color: white;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 15px;
+    background: none;
+    border: 1px solid var(--p-neon);
+    color: var(--p-neon);
+    font-weight: 800;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: 0.3s;
+}
+
+.btn-primary:hover {
+    background: var(--p-neon);
+    color: black;
+    box-shadow: 0 0 15px var(--p-neon);
+}
+
+/* Adiciona isto se quiseres o efeito hover azul para as notícias */
+.btn-primary[style*="var(--c-neon)"]:hover {
+    background: var(--c-neon) !important;
+    color: black !important;
+    box-shadow: 0 0 15px var(--c-neon);
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--c-neon);
+    box-shadow: 0 0 5px rgba(0, 212, 255, 0.2);
+}

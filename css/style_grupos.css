@@ -1,0 +1,306 @@
+:root {
+    --primary-neon: #ff00ff;
+    --secondary-neon: #00d4ff;
+    --bg-dark: #050505;
+    --transition: 0.4s ease;
+    --card-bg: rgba(15, 15, 15, 0.95);
+    --p-neon: #ff00ff; /* Alias para compatibilidade com o teu HTML */
+    --s-neon: #00d4ff; /* Alias para compatibilidade com o teu HTML */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    text-decoration: none;
+    list-style: none;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: white;
+    overflow-x: hidden;
+}
+
+/* --- NAVBAR --- */
+.navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 85px;
+    display: flex;
+    align-items: center;
+    z-index: 1000;
+    padding: 0 5%;
+    background: rgba(0, 0, 0, 0.85);
+    border-bottom: 1px solid rgba(255, 0, 255, 0.2);
+    transition: var(--transition);
+}
+
+.navbar-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: inherit;
+}
+
+.nav-logo-img {
+    height: 121px;
+    width: auto;
+    filter: drop-shadow(0 0 5px var(--primary-neon)); 
+}
+
+.nav-links {
+    display: flex;
+    gap: 25px;
+}
+
+.nav-links a {
+    color: #ccc;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    transition: var(--transition);
+}
+
+.nav-links a:hover, .nav-links a.active {
+    color: var(--primary-neon);
+    text-shadow: 0 0 8px var(--primary-neon);
+}
+
+.btn-login {
+    padding: 10px 20px;
+    border: 1px solid var(--secondary-neon);
+    color: var(--secondary-neon);
+    border-radius: 5px;
+    font-weight: bold;
+    transition: var(--transition);
+}
+
+/* --- LAYOUT SIDEBAR + CONTEÚDO --- */
+.main-layout {
+    display: flex;
+    gap: 30px;
+    padding: 37px 3% 50px;
+}
+
+.sidebar-filtros {
+    width: 280px;
+    flex-shrink: 0;
+}
+
+.card-sidebar {
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 25px;
+    position: sticky;
+    top: 110px;
+}
+
+.card-sidebar h3 {
+    color: var(--secondary-neon);
+    font-size: 1rem;
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #222;
+    padding-bottom: 10px;
+}
+
+.filter-section h4 {
+    font-size: 0.75rem;
+    color: #555;
+    margin: 20px 0 12px;
+    text-transform: uppercase;
+}
+
+/* --- CHECKBOXES NEON --- */
+.neon-check {
+    display: block;
+    position: relative;
+    padding-left: 35px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 0.9rem;
+    transition: 0.3s;
+}
+
+.neon-check:hover { color: #fff; }
+.neon-check input { position: absolute; opacity: 0; }
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 5px;
+}
+
+.neon-check input:checked ~ .checkmark {
+    background: var(--primary-neon);
+    border-color: var(--primary-neon);
+    box-shadow: 0 0 12px var(--primary-neon);
+}
+
+
+/* --- GRELHA E CARDS --- */
+.content-area { flex-grow: 1; }
+
+.section-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.line {
+    height: 2px;
+    width: 60px;
+    background: var(--primary-neon);
+    box-shadow: 0 0 10px var(--primary-neon);
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+.card {
+    height: 450px;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: 0.5s ease;
+}
+
+.card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.tag {
+    background: var(--primary-neon);
+    color: black;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    width: fit-content;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.btn-more {
+    background: transparent;
+    border: none;
+    color: var(--secondary-neon);
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    text-align: left;
+}
+.social-box {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+}
+
+.social-box h4 {
+    color: #00f2fe; /* Azul neon */
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+
+.social-icons-drawer {
+    display: flex;
+    gap: 20px;
+}
+
+.social-icons-drawer a {
+    color: #fff;
+    font-size: 1.6rem;
+    transition: 0.3s ease;
+}
+
+.social-icons-drawer a:hover {
+    color: #00f2fe;
+    transform: translateY(-3px);
+    filter: drop-shadow(0 0 8px #00f2fe);
+}
+/* --- DRAWER --- */
+.profile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    z-index: 2000;
+}
+
+.profile-overlay.active { display: block; }
+
+.profile-drawer {
+    position: fixed;
+    right: -500px;
+    top: 0;
+    width: 450px;
+    height: 100%;
+    background: #080808;
+    border-left: 2px solid var(--primary-neon);
+    z-index: 2001;
+    transition: 0.5s ease;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+.profile-drawer.active { right: 0; }
+.drawer-header h2 { color: var(--primary-neon); }
+.drawer-content img { width: 100%; border-radius: 15px; margin-bottom: 25px; border: 1px solid var(--primary-neon); }
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+    border-bottom: 1px solid #111;
+    padding-bottom: 5px;
+}
+
+.info-item b { color: var(--secondary-neon); }
+.description-box h4 { color: var(--primary-neon); font-size: 0.8rem; margin-bottom: 10px; }
+.description-box p { color: #ccc; font-size: 0.9rem; line-height: 1.6; }
+.close-btn { background: transparent; border: none; color: white; font-size: 2rem; cursor: pointer; }
+
+/* --- RODAPÉ E RESPONSIVIDADE --- */
+footer { text-align: center; padding: 40px; color: #555; }
+
+@media (max-width: 1200px) {
+    .main-layout { flex-direction: column; }
+    .sidebar-filtros { width: 100%; }
+    .grid-container { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .grid-container { grid-template-columns: 1fr; }
+    .profile-drawer { width: 100%; }
+}

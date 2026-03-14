@@ -1,0 +1,441 @@
+/* --- 1. CONFIGURAÇÕES GLOBAIS (:root) --- */
+:root {
+    --p-neon: #ff00ff;         /* Rosa Neon */
+    --s-neon: #00d4ff;         /* Azul Ciano */
+    --bg-dark: #050505;
+    --transition: 0.4s ease;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: white;
+    overflow-x: hidden;
+    display: flex;         
+    flex-direction: column; /* Necessário para o footer no fundo */
+    min-height: 100vh;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    text-decoration: none;
+    list-style: none;
+}
+
+/* --- 2. VÍDEO EM FUNDO (FULL SCREEN) --- */
+.video-background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -2;
+    overflow: hidden;
+}
+
+.video-wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+}
+
+.video-wrapper.active {
+    opacity: 1;
+}
+ /* TRANSIÇÃO ENTRE VÍDEOS */
+        .video-wrapper { opacity: 0; transition: opacity 1.5s ease-in-out; pointer-events: none; }
+        .video-wrapper.active { opacity: 1; pointer-events: auto; }
+
+        /* TÍTULO COM FADE */
+        .main-title { transition: opacity 0.6s ease, transform 0.6s ease; }
+        .main-title.fade-out { opacity: 0; transform: translateY(10px); }
+        .main-title.fade-in  { opacity: 1; transform: translateY(0); }
+
+        /* CONTROLO DE SOM */
+        .sound-control {
+            position: fixed; bottom: 30px; right: 30px; z-index: 9999;
+            display: flex; align-items: center;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(12px);
+            border: 1px solid rgba(0,212,255,0.3); border-radius: 50px;
+            overflow: hidden; box-shadow: 0 0 20px rgba(0,212,255,0.15);
+            transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+            width: 50px; height: 50px;
+        }
+        .sound-control.open {
+            width: 230px;
+            border-color: rgba(0,212,255,0.6);
+            box-shadow: 0 0 30px rgba(0,212,255,0.25);
+            padding-right: 16px;
+        }
+        .btn-mute {
+            background: none; border: none; color: #00d4ff; font-size: 1.1rem;
+            cursor: pointer; min-width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all 0.3s;
+        }
+        .btn-mute:hover { background: rgba(0,212,255,0.15); }
+        .btn-mute.muted { color: #555; }
+        .sound-inner {
+            display: flex; align-items: center; gap: 10px;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease 0s;
+            white-space: nowrap; overflow: hidden;
+        }
+        .sound-control.open .sound-inner {
+            opacity: 1; pointer-events: auto;
+            transition: opacity 0.3s ease 0.15s;
+        }
+        .volume-slider {
+            -webkit-appearance: none; appearance: none;
+            width: 100px; height: 4px; border-radius: 4px;
+            background: linear-gradient(to right, #00d4ff var(--vol, 0%), rgba(255,255,255,0.1) var(--vol, 0%));
+            outline: none; cursor: pointer;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 14px; height: 14px;
+            border-radius: 50%; background: #00d4ff;
+            box-shadow: 0 0 8px rgba(0,212,255,0.8); transition: transform 0.2s;
+        }
+        .volume-slider::-webkit-slider-thumb:hover { transform: scale(1.3); }
+        .volume-slider::-moz-range-thumb {
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #00d4ff; border: none; box-shadow: 0 0 8px rgba(0,212,255,0.8);
+        }
+        .volume-pct {
+            font-size: 0.68rem; font-weight: 700; color: #00d4ff;
+            min-width: 28px; text-align: right; font-family: 'Poppins', sans-serif;
+        }
+/* O segredo para preencher tudo sem barras pretas */
+iframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100vw;
+    height: 56.25vw; 
+    min-height: 100vh;
+    min-width: 177.77vh; 
+    transform: translate(-50%, -50%);
+    pointer-events: none; 
+}
+
+.overlay-dark {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    /* Gradiente para escurecer o fundo e dar destaque ao texto */
+    background: linear-gradient(rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 100%);
+    z-index: -1;
+}
+
+/* --- 3. MENU (NAVBAR) --- */
+.navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    z-index: 1000;
+    padding: 0 5%;
+    background: rgba(65, 65, 65, 0.7); 
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid rgba(255, 0, 255, 0.2);
+}
+
+.navbar-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: white;
+}
+
+.logo-link span {
+    color: var(--p-neon);
+    text-shadow: 0 0 10px var(--p-neon), 0 0 20px var(--p-neon);
+}
+
+.nav-logo-img {
+    height: 121px;
+    width: auto;
+    filter: drop-shadow(0 0 5px var(--p-neon));
+}
+
+.nav-links {
+    display: flex;
+    gap: 25px;
+}
+
+.nav-links a {
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nav-links a:hover {
+    color: var(--p-neon);
+    text-shadow: 0 0 10px var(--p-neon);
+}
+
+.btn-login {
+    padding: 10px 25px;
+    border: 2px solid var(--s-neon); 
+    color: var(--s-neon);
+    border-radius: 8px;
+    font-weight: bold;
+    transition: var(--transition);
+}
+
+.btn-login:hover {
+    background: var(--s-neon);
+    color: #000;
+    box-shadow: 0 0 20px var(--s-neon);
+}
+
+/* --- 4. CONTEÚDO --- */
+main {
+    flex: 1; /* Faz o conteúdo crescer e empurrar o footer */
+}
+
+.hero-section {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.mv-details {
+    padding: 20px 40px;
+    border-left: 4px solid var(--p-neon);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+}
+
+.main-title {
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    text-transform: uppercase;
+    text-shadow: 0 0 20px var(--p-neon);
+}
+
+/* --- SECÇÃO GRUPOS EM DESTAQUE (MODERNA) --- */
+.featured-groups {
+    position: relative;
+    background: #00000075;
+    padding: 100px 8%;
+    z-index: 10;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 3rem;
+    margin-bottom: 60px;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    color: white;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 40px;
+}
+
+.card {
+    height: 500px;
+    border-radius: 25px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #000;
+}
+
+/* Imagem de Fundo com Zoom */
+.card-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.8s ease;
+    z-index: 1;
+}
+
+.card:hover .card-bg {
+    transform: scale(1.1); /* Efeito de zoom na imagem */
+}
+
+/* Overlay de Vidro (Glassmorphism) */
+.card-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    padding: 25px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(15px); /* Efeito de desfoque */
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 2;
+    transition: 0.5s;
+}
+
+.card:hover .card-overlay {
+    border-color: var(--s-neon); /* Borda muda para azul ao passar o rato */
+    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+}
+
+.card-overlay h3 {
+    font-size: 2rem;
+    color: white;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.card-overlay p {
+    color: var(--s-neon);
+    font-weight: 600;
+    letter-spacing: 2px;
+    font-size: 0.8rem;
+}
+
+/* Brilho Neon na borda do Card */
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 25px;
+    box-shadow: inset 0 0 0 0 var(--p-neon);
+    transition: 0.5s;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.card:hover::before {
+    box-shadow: inset 0 0 20px var(--p-neon); /* Brilho interno rosa */
+}
+/* --- SECÇÃO text  --- */
+.featured-text {
+    position: relative;
+    background: #08080a;
+    padding: 100px 8%;
+    z-index: 10;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 3rem;
+    margin-bottom: 60px;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    color: white;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 40px;
+}
+
+.card {
+    height: 500px;
+    border-radius: 25px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #000;
+}
+/* Secção Geral */
+.sobre-section {
+    padding: 40px 10%;
+    background-color: #00000075;
+}
+
+/* Container que divide o texto da imagem */
+.sobre-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 50px;
+    margin-top: 30px;
+    /* Animação de entrada */
+    animation: fadeIn 1.2s ease-out;
+}
+
+.sobre-texto {
+    flex: 1;
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.8;
+    font-size: 1.1rem;
+    text-align: justify;
+}
+
+.sobre-imagem {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.sobre-imagem img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 15px;
+    border: 2px solid rgba(0, 242, 254, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Efeito ao passar o rato na imagem */
+.sobre-imagem img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 25px rgba(0, 242, 254, 0.5);
+}
+
+/* Definição da Animação Fade In */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- 5. RODAPÉ (FOOTER) --- */
+.main-footer {
+    width: 100%;
+    padding: 40px;
+    text-align: center;
+    background: #00000075;
+    color: #444;
+    border-top: 1px solid #222;
+    margin-top: auto; 
+}
