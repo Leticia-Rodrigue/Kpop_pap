@@ -98,6 +98,14 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
             <?php if (isset($enviado) && $enviado): ?>
                 <div class="msg-feedback msg-sucesso">&#x2705; Mensagem enviada com sucesso!</div>
             <?php endif; ?>
+
+            <?php if (isset($erro_captcha)): ?>
+                <div class="msg-feedback msg-erro"><?php echo htmlspecialchars($erro_captcha); ?></div>
+            <?php endif; ?>
+
+            <?php if (isset($erro_envio)): ?>
+                <div class="msg-feedback msg-erro"><?php echo htmlspecialchars($erro_envio); ?></div>
+            <?php endif; ?>
             
             <?php if (!isset($enviado)): ?>
             <form id="mainForm">

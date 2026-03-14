@@ -1,12 +1,7 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
-require_once __DIR__ . '/PHPMailer-master/PHPMailer-master/src/Exception.php';
-require_once __DIR__ . '/PHPMailer-master/PHPMailer-master/src/PHPMailer.php';
-require_once __DIR__ . '/PHPMailer-master/PHPMailer-master/src/SMTP.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+require_once __DIR__ . '/mail_helper.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['nome'])) {
 
@@ -156,18 +151,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['nome'])) {
         </html>';
 
         try {
+            $adminEmail = app_admin_email();
+            if (!$adminEmail) {
+                throw new RuntimeException('Configuração do email de destino em falta.');
+            }
+
             // Email 1: admin
-            $mail = new PHPMailer(true);
-            $mail->isSMTP();
-            $mail->Host       = 'smtp.gmail.com';
-            $mail->SMTPAuth   = true;
-            $mail->Username   = 'kpopuniverse.pap@gmail.com';
-            $mail->Password   = 'vvgigfkwdzxnkgzp';
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port       = 587;
-            $mail->CharSet    = 'UTF-8';
-            $mail->setFrom('kpopuniverse.pap@gmail.com', 'Site - K-Pop Universe');
-            $mail->addAddress('kpopuniverse.pap@gmail.com');
+            $mail = create_configured_mailer('Site - K-Pop Universe');
+            $mail->addAddress($adminEmail);
             $mail->addReplyTo($email, $nome);
             $mail->isHTML(true);
             $mail->Subject = 'Nova mensagem de ' . $nome . ' - K-Pop Universe';
@@ -175,16 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['nome'])) {
             $mail->send();
 
             // Email 2: confirmação ao utilizador
-            $mail2 = new PHPMailer(true);
-            $mail2->isSMTP();
-            $mail2->Host       = 'smtp.gmail.com';
-            $mail2->SMTPAuth   = true;
-            $mail2->Username   = 'kpopuniverse.pap@gmail.com';
-            $mail2->Password   = 'vvgigfkwdzxnkgzp';
-            $mail2->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail2->Port       = 587;
-            $mail2->CharSet    = 'UTF-8';
-            $mail2->setFrom('kpopuniverse.pap@gmail.com', 'K-Pop Universe');
+            $mail2 = create_configured_mailer('K-Pop Universe');
             $mail2->addAddress($email, $nome);
             $mail2->isHTML(true);
             $mail2->Subject = 'Recebemos a tua mensagem - K-Pop Universe';
@@ -193,8 +175,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['nome'])) {
 
             $enviado = true;
 
-        } catch (Exception $e) {
-            $erro_envio = $mail->ErrorInfo;
+        } catch (Throwable $e) {
+            error_log('Contact email failed: ' . $e->getMessage());
+            $erro_envio = 'Nao foi possivel enviar a mensagem agora. Tenta novamente mais tarde.';
         }
     }
 }

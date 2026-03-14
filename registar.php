@@ -1,44 +1,20 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 include 'bd_connection.php';
+require_once __DIR__ . '/password_reset_helper.php';
 
-// --- RECUPERAR PASSWORD: verificar email ---
-if (isset($_POST['btn_verificar_email'])) {
-    $email = mysqli_real_escape_string($conn, $_POST['recovery_email']);
-    $res   = mysqli_query($conn, "SELECT id_utilizador FROM utilizadores WHERE email = '$email'");
-    if (mysqli_num_rows($res) > 0) {
-        $_SESSION['recovery_email'] = $email;
-        $recovery_step = 2;
-    } else {
-        $recovery_step = 1;
-        $recovery_error = 'Email não encontrado.';
-    }
-}
+// --- RECUPERAR PASSWORD: pedir email e enviar link ---
+if (isset($_POST['btn_request_password_reset'])) {
+    $recovery_step = 1;
+    $recovery_email = trim($_POST['recovery_email'] ?? '');
 
-// --- RECUPERAR PASSWORD: guardar nova password ---
-if (isset($_POST['btn_nova_password'])) {
-    if (!isset($_SESSION['recovery_email'])) {
-        $recovery_step = 1;
-        $recovery_error = 'Sessão expirada. Tenta novamente.';
+    if ($recovery_email === '' || !filter_var($recovery_email, FILTER_VALIDATE_EMAIL)) {
+        $recovery_error = 'Introduz um email válido.';
     } else {
-        $nova = $_POST['nova_password'];
-        $conf = $_POST['conf_password'];
-        if (strlen($nova) < 6) {
+        if (request_password_reset($conn, $recovery_email)) {
             $recovery_step = 2;
-            $pass_error = 'A password deve ter pelo menos 6 caracteres.';
-        } elseif ($nova !== $conf) {
-            $recovery_step = 2;
-            $pass_error = 'As passwords não coincidem.';
         } else {
-            $hash  = password_hash($nova, PASSWORD_DEFAULT);
-            $email = $_SESSION['recovery_email'];
-            if (mysqli_query($conn, "UPDATE utilizadores SET senha_hash='$hash' WHERE email='$email'")) {
-                unset($_SESSION['recovery_email']);
-                $recovery_step = 3;
-            } else {
-                $recovery_step = 2;
-                $pass_error = 'Erro ao guardar. Tenta novamente.';
-            }
+            $recovery_error = 'Não foi possível processar o pedido agora. Tenta novamente.';
         }
     }
 }
@@ -68,6 +44,7 @@ if (isset($_POST['btn_login'])) {
     $res   = mysqli_query($conn, "SELECT * FROM utilizadores WHERE email = '$email'");
     $user  = mysqli_fetch_assoc($res);
     if ($user && password_verify($pass, $user['senha_hash'])) {
+        session_regenerate_id(true);
         $_SESSION['user_id']  = $user['id_utilizador'];
         $_SESSION['username'] = $user['nome'];
         $_SESSION['role']     = $user['role_id'];
@@ -141,33 +118,21 @@ if (isset($_POST['btn_login'])) {
         <!-- Passo 1: email -->
         <div class="modal-step active" id="step1">
             <h2>Recuperar Password</h2>
-            <p>Introduz o email da tua conta para continuares.</p>
+            <p>Introduz o email da tua conta. Se existir, enviamos um link seguro para redefinires a password.</p>
             <form method="POST" action="">
-                <input type="email" name="recovery_email" placeholder="O teu email" required>
+                <input type="email" name="recovery_email" placeholder="O teu email" value="<?php echo htmlspecialchars($recovery_email ?? ''); ?>" required>
                 <div class="modal-error" id="recovery_error"></div>
-                <button type="submit" name="btn_verificar_email" class="modal-btn">Continuar</button>
+                <button type="submit" name="btn_request_password_reset" class="modal-btn">Enviar Link</button>
             </form>
             <button class="modal-btn-ghost" onclick="closeRecovery()">Cancelar</button>
         </div>
 
-        <!-- Passo 2: nova password -->
+        <!-- Passo 2: confirmação -->
         <div class="modal-step" id="step2">
-            <h2>Nova Password</h2>
-            <p>Escolhe uma nova password com pelo menos 6 caracteres.</p>
-            <form method="POST" action="">
-                <input type="password" name="nova_password" placeholder="Nova password" required>
-                <input type="password" name="conf_password" placeholder="Confirmar password" required>
-                <div class="modal-error" id="pass_error"></div>
-                <button type="submit" name="btn_nova_password" class="modal-btn">Guardar Password</button>
-            </form>
-        </div>
-
-        <!-- Passo 3: sucesso -->
-        <div class="modal-step" id="step3">
-            <span class="success-icon">&#x2705;</span>
-            <h2 class="center">Password Alterada!</h2>
-            <p class="center">A tua password foi atualizada com sucesso. Já podes fazer login.</p>
-            <button class="modal-btn" onclick="closeRecovery()">Ir para o Login</button>
+            <span class="success-icon">&#x2709;</span>
+            <h2 class="center">Verifica o teu email</h2>
+            <p class="center">Se existir uma conta com esse email, enviámos um link único para redefinires a password.</p>
+            <button class="modal-btn" onclick="closeRecovery()">Fechar</button>
         </div>
     </div>
 </div>
@@ -226,13 +191,10 @@ if (isset($_POST['btn_login'])) {
     document.getElementById('recoveryModal').addEventListener('click', function(e) { if (e.target === this) closeRecovery(); });
 
     <?php if (isset($recovery_step)): ?>
-    openRecoveryStep(<?php echo $recovery_step; ?>);
+    openRecoveryStep(<?php echo (int) $recovery_step; ?>);
+    <?php endif; ?>
     <?php if (isset($recovery_error)): ?>
-    document.getElementById('recovery_error') && (document.getElementById('recovery_error').textContent = '<?php echo addslashes($recovery_error); ?>');
-    <?php endif; ?>
-    <?php if (isset($pass_error)): ?>
-    document.getElementById('pass_error') && (document.getElementById('pass_error').textContent = '<?php echo addslashes($pass_error); ?>');
-    <?php endif; ?>
+    document.getElementById('recovery_error').textContent = <?php echo json_encode($recovery_error, JSON_UNESCAPED_UNICODE); ?>;
     <?php endif; ?>
 </script>
 </body>
