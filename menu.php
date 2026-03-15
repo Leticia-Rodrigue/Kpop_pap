@@ -131,6 +131,10 @@ include 'bd_connection.php';
         <div class="nav-actions">
             <?php 
             $paginaAtual = basename($_SERVER['PHP_SELF']);
+            $canEditSite = isset($_SESSION['role']) && ($_SESSION['role'] == 1 || $_SESSION['role'] == 2);
+            $isSiteEditMode = $paginaAtual == 'index.php' && (($_GET['edit_mode'] ?? '') === '1');
+            $editSiteHref = $isSiteEditMode ? 'index.php#historia-section' : 'index.php?edit_mode=1#historia-section';
+            $editSiteLabel = $isSiteEditMode ? 'Sair da Edição' : 'Editar Site';
             if ($paginaAtual == 'produtos.php'): 
             ?>
                 <button class="btn-cart-trigger" onclick="toggleCart()">🛒 CARRINHO</button>
@@ -162,7 +166,7 @@ include 'bd_connection.php';
                                 <a href="<?php echo ($_SESSION['role'] == 1) ? 'painel_adminMaster.php' : 'admin_painel.php'; ?>" style="border: 1px solid #00ffff55;">
                                     Painel <?php echo ($_SESSION['role'] == 1) ? "Master" : "Admin"; ?>
                                 </a>
-                                <a href="compras.php">Editar Site</a>
+                                <a href="<?php echo $editSiteHref; ?>"><?php echo $editSiteLabel; ?></a>
                             <?php endif; ?>
 
                             <a href="logout.php" class="logout-btn">Logout</a>

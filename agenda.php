@@ -6,6 +6,7 @@ $query_news = "SELECT * FROM noticias ORDER BY id_noticia DESC";
 $res_news = mysqli_query($conn, $query_news);
 
 $query_agenda = "SELECT * FROM agenda_shows ORDER BY ordem_data ASC";
+
 $res_agenda = mysqli_query($conn, $query_agenda);
 
 $noticias = [];

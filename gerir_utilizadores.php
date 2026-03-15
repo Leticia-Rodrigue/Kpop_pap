@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'bd_connection.php';
+require_once __DIR__ . '/csrf_helper.php';
 
 // 1. SEGURANÇA: Apenas Master (Role 1) costuma gerir utilizadores
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 1) {
@@ -8,19 +9,58 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 1) {
     exit();
 }
 
+$msg = "";
+$msg_type = "";
+$isCsrfValid = true;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !is_valid_csrf_token($_POST['csrf_token'] ?? null)) {
+    $msg = "Pedido inválido. Atualiza a página e tenta novamente.";
+    $msg_type = "error";
+    $isCsrfValid = false;
+}
+
 // 2. LÓGICA: ALTERAR CARGO (Role)
-if (isset($_GET['promote'])) {
-    $id = intval($_GET['promote']);
-    $new_role = intval($_GET['role']);
-    mysqli_query($conn, "UPDATE utilizadores SET role = $new_role WHERE id_utilizador = $id");
-    header("Location: gerir_utilizadores.php");
+if ($isCsrfValid && isset($_POST['btn_update_role'])) {
+    $id = intval($_POST['user_id'] ?? 0);
+    $new_role = intval($_POST['new_role'] ?? 0);
+
+    if ($id === intval($_SESSION['user_id'])) {
+        $msg = "Não podes alterar o teu próprio cargo nesta página.";
+        $msg_type = "error";
+    } elseif (($new_role !== 2 && $new_role !== 3) || $id <= 0) {
+        $msg = "Operação inválida.";
+        $msg_type = "error";
+    } elseif (mysqli_query($conn, "UPDATE utilizadores SET role = $new_role WHERE id_utilizador = $id")) {
+        header("Location: gerir_utilizadores.php?ok=1");
+        exit();
+    } else {
+        $msg = "Erro ao atualizar cargo: " . mysqli_error($conn);
+        $msg_type = "error";
+    }
 }
 
 // 3. LÓGICA: BANIR/REMOVER
-if (isset($_GET['delete'])) {
-    $id = intval($_GET['delete']);
-    mysqli_query($conn, "DELETE FROM utilizadores WHERE id_utilizador = $id");
-    header("Location: gerir_utilizadores.php");
+if ($isCsrfValid && isset($_POST['btn_delete_user'])) {
+    $id = intval($_POST['delete_user_id'] ?? 0);
+
+    if ($id === intval($_SESSION['user_id'])) {
+        $msg = "Não podes remover a tua própria conta nesta página.";
+        $msg_type = "error";
+    } elseif ($id <= 0) {
+        $msg = "Operação inválida.";
+        $msg_type = "error";
+    } elseif (mysqli_query($conn, "DELETE FROM utilizadores WHERE id_utilizador = $id")) {
+        header("Location: gerir_utilizadores.php?ok=1");
+        exit();
+    } else {
+        $msg = "Erro ao remover utilizador: " . mysqli_error($conn);
+        $msg_type = "error";
+    }
+}
+
+if (isset($_GET['ok'])) {
+    $msg = "Operação realizada com sucesso!";
+    $msg_type = "success";
 }
 
 $utilizadores = mysqli_query($conn, "SELECT * FROM utilizadores ORDER BY role ASC, nome ASC");
@@ -85,10 +125,18 @@ $utilizadores = mysqli_query($conn, "SELECT * FROM utilizadores ORDER BY role AS
             font-size: 0.75rem;
             margin-right: 10px;
             transition: 0.3s;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-family: inherit;
         }
         .promote { color: #00ff00; }
         .demote { color: #ffae00; }
         .ban { color: #ff4d4d; }
+        .alert { padding: 15px 20px; border-radius: 10px; margin-bottom: 25px; font-weight: bold; font-size: 0.9rem; }
+        .alert.success { background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid rgba(0,255,136,0.3); }
+        .alert.error { background: rgba(255,77,77,0.1); color: #ff4d4d; border: 1px solid rgba(255,77,77,0.3); }
     </style>
 </head>
 <body class="admin-body">
@@ -109,6 +157,10 @@ $utilizadores = mysqli_query($conn, "SELECT * FROM utilizadores ORDER BY role AS
             <h1>👥 Gestão de Utilizadores</h1>
             <p style="color: #666;">Controlo total sobre cargos e acessos à plataforma.</p>
         </header>
+
+        <?php if ($msg): ?>
+            <div class="alert <?php echo $msg_type; ?>"><?php echo htmlspecialchars($msg); ?></div>
+        <?php endif; ?>
 
         <div class="user-table-container">
             <table class="user-table">
@@ -136,12 +188,26 @@ $utilizadores = mysqli_query($conn, "SELECT * FROM utilizadores ORDER BY role AS
                             <?php if($u['id_utilizador'] != $_SESSION['user_id']): // Não se auto-editar ?>
                                 
                                 <?php if($u['role'] != 2): ?>
-                                    <a href="?promote=<?php echo $u['id_utilizador']; ?>&role=2" class="btn-action promote">Tornar Admin</a>
+                                    <form method="POST" style="display:inline-block; margin:0;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                                        <input type="hidden" name="user_id" value="<?php echo (int) $u['id_utilizador']; ?>">
+                                        <input type="hidden" name="new_role" value="2">
+                                        <button type="submit" name="btn_update_role" class="btn-action promote">Tornar Admin</button>
+                                    </form>
                                 <?php else: ?>
-                                    <a href="?promote=<?php echo $u['id_utilizador']; ?>&role=3" class="btn-action demote">Remover Admin</a>
+                                    <form method="POST" style="display:inline-block; margin:0;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                                        <input type="hidden" name="user_id" value="<?php echo (int) $u['id_utilizador']; ?>">
+                                        <input type="hidden" name="new_role" value="3">
+                                        <button type="submit" name="btn_update_role" class="btn-action demote">Remover Admin</button>
+                                    </form>
                                 <?php endif; ?>
 
-                                <a href="?delete=<?php echo $u['id_utilizador']; ?>" class="btn-action ban" onclick="return confirm('Expulsar este utilizador?')">Banir</a>
+                                <form method="POST" style="display:inline-block; margin:0;" onsubmit="return confirm('Expulsar este utilizador?')">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                                    <input type="hidden" name="delete_user_id" value="<?php echo (int) $u['id_utilizador']; ?>">
+                                    <button type="submit" name="btn_delete_user" class="btn-action ban">Banir</button>
+                                </form>
                             
                             <?php else: ?>
                                 <span style="color: #444; font-style: italic;">(Tu)</span>

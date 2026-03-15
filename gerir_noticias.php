@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'bd_connection.php';
+require_once __DIR__ . '/csrf_helper.php';
 
 if (!isset($_SESSION['role']) || ($_SESSION['role'] != 1 && $_SESSION['role'] != 2)) {
     header("Location: index.php");
@@ -9,9 +10,16 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] != 1 && $_SESSION['role'] !=
 
 $msg = "";
 $msg_type = "";
+$isCsrfValid = true;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !is_valid_csrf_token($_POST['csrf_token'] ?? null)) {
+    $msg = "Pedido inválido. Atualiza a página e tenta novamente.";
+    $msg_type = "error";
+    $isCsrfValid = false;
+}
 
 // --- ADICIONAR OU ATUALIZAR NOTÍCIA ---
-if (isset($_POST['btn_save_news'])) {
+if ($isCsrfValid && isset($_POST['btn_save_news'])) {
     $titulo   = mysqli_real_escape_string($conn, $_POST['titulo']);
     $resumo   = mysqli_real_escape_string($conn, $_POST['resumo']);
     $data_pub = $_POST['data_pub'];
@@ -35,7 +43,7 @@ if (isset($_POST['btn_save_news'])) {
 }
 
 // --- ADICIONAR OU ATUALIZAR AGENDA ---
-if (isset($_POST['btn_save_agenda'])) {
+if ($isCsrfValid && isset($_POST['btn_save_agenda'])) {
     $data_ev = mysqli_real_escape_string($conn, $_POST['data_evento']);
     $grupo   = mysqli_real_escape_string($conn, $_POST['grupo_evento']);
     $local   = mysqli_real_escape_string($conn, $_POST['localizacao']);
@@ -60,25 +68,25 @@ if (isset($_POST['btn_save_agenda'])) {
 }
 
 // --- APAGAR ---
-if (isset($_GET['delete'])) {
-    $id = intval($_GET['delete']);
-    if (mysqli_query($conn, "DELETE FROM noticias WHERE id_noticia = $id")) {
+if ($isCsrfValid && isset($_POST['btn_delete_news'])) {
+    $id = intval($_POST['delete_news_id'] ?? 0);
+    if ($id > 0 && mysqli_query($conn, "DELETE FROM noticias WHERE id_noticia = $id")) {
         header("Location: gerir_noticias.php?ok=news");
+        exit();
     } else {
         $msg = "Erro ao apagar notícia: " . mysqli_error($conn);
         $msg_type = "error";
     }
-    if (empty($msg)) exit();
 }
-if (isset($_GET['delete_agenda'])) {
-    $id = intval($_GET['delete_agenda']);
-    if (mysqli_query($conn, "DELETE FROM agenda_shows WHERE id_show = $id")) {
+if ($isCsrfValid && isset($_POST['btn_delete_agenda'])) {
+    $id = intval($_POST['delete_agenda_id'] ?? 0);
+    if ($id > 0 && mysqli_query($conn, "DELETE FROM agenda_shows WHERE id_show = $id")) {
         header("Location: gerir_noticias.php?ok=agenda#agenda_section");
+        exit();
     } else {
         $msg = "Erro ao apagar show: " . mysqli_error($conn);
         $msg_type = "error";
     }
-    if (empty($msg)) exit();
 }
 
 // Mensagens de sucesso
@@ -158,7 +166,7 @@ if (!$agenda)   { $msg = "Erro ao carregar agenda: "   . mysqli_error($conn); $m
             border-radius: 20px; padding: 20px; transition: 0.3s; margin-bottom: 10px;
         }
         .news-card-admin:hover, .agenda-card-admin:hover { border-color: #4facfe; }
-        .action-btn { padding: 8px 15px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-decoration: none; display: inline-block; transition: 0.2s; }
+        .action-btn { padding: 8px 15px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-decoration: none; display: inline-block; transition: 0.2s; background: transparent; cursor: pointer; font-family: inherit; }
         .btn-edit   { color: #4facfe; border: 1px solid #4facfe; }
         .btn-edit:hover   { background: #4facfe; color: black; }
         .btn-delete { color: #ff4d4d; border: 1px solid #ff4d4d; }
@@ -196,6 +204,7 @@ if (!$agenda)   { $msg = "Erro ao carregar agenda: "   . mysqli_error($conn); $m
         <section class="form-section">
             <div class="form-container-glow" style="max-width: 850px; border-color: <?php echo $edit_data ? '#4facfe' : '#333'; ?>;">
                 <form method="POST" class="master-form-grid">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="edit_id" value="<?php echo $edit_data['id_noticia'] ?? ''; ?>">
                     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
                         <input type="text" name="titulo" placeholder="Título da Notícia" value="<?php echo htmlspecialchars($edit_data['titulo'] ?? ''); ?>" required>
@@ -226,6 +235,7 @@ if (!$agenda)   { $msg = "Erro ao carregar agenda: "   . mysqli_error($conn); $m
         <section class="form-section">
             <div class="form-container-glow" style="max-width: 850px; border-color: #f09;">
                 <form method="POST" class="master-form-grid">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="edit_agenda_id" value="<?php echo $edit_agenda['id_show'] ?? ''; ?>">
                     <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px;">
                         <input type="text" name="data_evento" placeholder="Data (Ex: 06-08 MAR)" value="<?php echo htmlspecialchars($edit_agenda['data_evento'] ?? ''); ?>" required>
@@ -265,7 +275,11 @@ if (!$agenda)   { $msg = "Erro ao carregar agenda: "   . mysqli_error($conn); $m
                 <small style="color:#666;"><?php echo $n['data_pub']; ?></small>
                 <div style="display: flex; gap: 10px; margin-top: 15px;">
                     <a href="?edit=<?php echo $n['id_noticia']; ?>" class="action-btn btn-edit">EDITAR</a>
-                    <a href="?delete=<?php echo $n['id_noticia']; ?>" class="action-btn btn-delete" onclick="return confirm('Apagar notícia?')">REMOVER</a>
+                    <form method="POST" style="margin: 0;" onsubmit="return confirm('Apagar notícia?')">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="delete_news_id" value="<?php echo (int) $n['id_noticia']; ?>">
+                        <button type="submit" name="btn_delete_news" class="action-btn btn-delete">REMOVER</button>
+                    </form>
                 </div>
             </div>
             <?php endwhile; else: ?>
@@ -288,7 +302,11 @@ if (!$agenda)   { $msg = "Erro ao carregar agenda: "   . mysqli_error($conn); $m
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <a href="?edit_agenda=<?php echo $a['id_show']; ?>#agenda_section" class="action-btn btn-edit">EDITAR</a>
-                    <a href="?delete_agenda=<?php echo $a['id_show']; ?>" class="action-btn btn-delete" onclick="return confirm('Apagar este show?')">REMOVER</a>
+                    <form method="POST" style="margin: 0;" onsubmit="return confirm('Apagar este show?')">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="delete_agenda_id" value="<?php echo (int) $a['id_show']; ?>">
+                        <button type="submit" name="btn_delete_agenda" class="action-btn btn-delete">REMOVER</button>
+                    </form>
                 </div>
             </div>
             <?php endwhile; else: ?>

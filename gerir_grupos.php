@@ -1,6 +1,7 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 include 'bd_connection.php';
+require_once __DIR__ . '/csrf_helper.php';
 
 // Segurança para Admin/Master
 if (!isset($_SESSION['role']) || ($_SESSION['role'] != 1 && $_SESSION['role'] != 2)) {
@@ -10,9 +11,16 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] != 1 && $_SESSION['role'] !=
 
 $msg = "";
 $msg_type = "";
+$isCsrfValid = true;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !is_valid_csrf_token($_POST['csrf_token'] ?? null)) {
+    $msg = "Pedido inválido. Atualiza a página e tenta novamente.";
+    $msg_type = "error";
+    $isCsrfValid = false;
+}
 
 // Lógica para Salvar/Editar
-if (isset($_POST['btn_save_group'])) {
+if ($isCsrfValid && isset($_POST['btn_save_group'])) {
     $nome    = mysqli_real_escape_string($conn, $_POST['nome_grupo']);
     $tag     = mysqli_real_escape_string($conn, $_POST['tag']);
     $genero  = mysqli_real_escape_string($conn, $_POST['genero']);
@@ -35,10 +43,20 @@ if (isset($_POST['btn_save_group'])) {
 }
 
 // Lógica para Apagar
-if (isset($_GET['delete'])) {
-    $id = intval($_GET['delete']);
-    mysqli_query($conn, "DELETE FROM grupos WHERE id_grupo = $id");
-    header("Location: gerir_grupos.php?ok=del"); exit();
+if ($isCsrfValid && isset($_POST['btn_delete_group'])) {
+    $id = intval($_POST['delete_id'] ?? 0);
+    if ($id > 0 && mysqli_query($conn, "DELETE FROM grupos WHERE id_grupo = $id")) {
+        header("Location: gerir_grupos.php?ok=del");
+        exit();
+    }
+
+    $msg = "Erro ao apagar grupo: " . mysqli_error($conn);
+    $msg_type = "error";
+}
+
+if (isset($_GET['ok'])) {
+    $msg = $_GET['ok'] === 'del' ? "Grupo apagado com sucesso!" : "Grupo guardado com sucesso!";
+    $msg_type = "success";
 }
 
 $edit_data = null;
@@ -153,8 +171,19 @@ $grupos = mysqli_query($conn, "SELECT * FROM grupos ORDER BY id_grupo DESC");
         .group-info h3 { margin: 0; font-size: 1.1rem; }
         .group-info p { margin: 5px 0 0; color: #666; font-size: 0.8rem; }
 
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .alert.success { background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid rgba(0,255,136,0.3); }
+        .alert.error { background: rgba(255,77,77,0.1); color: #ff4d4d; border: 1px solid rgba(255,77,77,0.3); }
+
         .actions { margin-left: auto; display: flex; gap: 10px; }
-        .actions a { 
+        .actions a,
+        .actions button { 
             color: #fff; 
             text-decoration: none; 
             font-size: 0.75rem; 
@@ -162,6 +191,9 @@ $grupos = mysqli_query($conn, "SELECT * FROM grupos ORDER BY id_grupo DESC");
             padding: 6px 12px; 
             border-radius: 6px; 
             border: 1px solid #444; 
+            background: transparent;
+            cursor: pointer;
+            font-family: inherit;
         }
     </style>
 </head>
@@ -181,8 +213,13 @@ $grupos = mysqli_query($conn, "SELECT * FROM grupos ORDER BY id_grupo DESC");
     <main class="main-content">
         <h1>Adicionar Novo Grupo</h1>
 
+        <?php if ($msg): ?>
+            <div class="alert <?php echo $msg_type; ?>"><?php echo htmlspecialchars($msg); ?></div>
+        <?php endif; ?>
+
         <div class="form-container">
             <form method="POST" class="form-grid">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="edit_id" value="<?php echo $edit_data['id_grupo'] ?? ''; ?>">
                 
                 <input type="text" name="nome_grupo" placeholder="Nome do Grupo" value="<?php echo $edit_data['nome_grupo'] ?? ''; ?>" required>
@@ -220,7 +257,11 @@ $grupos = mysqli_query($conn, "SELECT * FROM grupos ORDER BY id_grupo DESC");
                 </div>
                 <div class="actions">
                     <a href="?edit=<?php echo $g['id_grupo']; ?>" style="border-color: #00d4ff;">EDITAR</a>
-                    <a href="?delete=<?php echo $g['id_grupo']; ?>" style="border-color: #ff4d4d;" onclick="return confirm('Apagar?')">APAGAR</a>
+                    <form method="POST" style="margin: 0;" onsubmit="return confirm('Apagar?')">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="delete_id" value="<?php echo (int) $g['id_grupo']; ?>">
+                        <button type="submit" name="btn_delete_group" style="border-color: #ff4d4d;">APAGAR</button>
+                    </form>
                 </div>
             </div>
             <?php endwhile; ?>

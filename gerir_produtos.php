@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'bd_connection.php';
+require_once __DIR__ . '/csrf_helper.php';
 
 if (!isset($_SESSION['role']) || ($_SESSION['role'] != 1 && $_SESSION['role'] != 2)) {
     header("Location: index.php");
@@ -9,8 +10,15 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] != 1 && $_SESSION['role'] !=
 
 $msg = "";
 $msg_type = "";
+$isCsrfValid = true;
 
-if (isset($_POST['btn_save_prod'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !is_valid_csrf_token($_POST['csrf_token'] ?? null)) {
+    $msg = "Pedido inválido. Atualiza a página e tenta novamente.";
+    $msg_type = "error";
+    $isCsrfValid = false;
+}
+
+if ($isCsrfValid && isset($_POST['btn_save_prod'])) {
     $nome      = mysqli_real_escape_string($conn, $_POST['nome']);
     $preco     = floatval($_POST['preco']);
     $categoria = mysqli_real_escape_string($conn, $_POST['categoria']);
@@ -40,15 +48,15 @@ if (isset($_GET['ok'])) {
     $msg_type = "success";
 }
 
-if (isset($_GET['delete'])) {
-    $id = intval($_GET['delete']);
-    if (mysqli_query($conn, "DELETE FROM produtos WHERE id_produto = $id")) {
+if ($isCsrfValid && isset($_POST['btn_delete_prod'])) {
+    $id = intval($_POST['delete_id'] ?? 0);
+    if ($id > 0 && mysqli_query($conn, "DELETE FROM produtos WHERE id_produto = $id")) {
         header("Location: gerir_produtos.php?ok=1");
+        exit();
     } else {
         $msg      = "Erro ao apagar: " . mysqli_error($conn);
         $msg_type = "error";
     }
-    exit();
 }
 
 $edit_data = null;
@@ -113,7 +121,7 @@ if (!$produtos) {
             transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
         }
         .product-card-admin:hover { transform: translateY(-10px); border-color: var(--c-neon) !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .action-btn { padding: 8px 15px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; text-decoration: none; transition: 0.3s; }
+        .action-btn { padding: 8px 15px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; text-decoration: none; transition: 0.3s; background: transparent; cursor: pointer; font-family: inherit; }
         .btn-edit   { color: var(--c-neon); border: 1px solid var(--c-neon); }
         .btn-edit:hover   { background: var(--c-neon); color: black; }
         .btn-delete { color: #ff4d4d; border: 1px solid #ff4d4d; }
@@ -151,6 +159,7 @@ if (!$produtos) {
         <section class="form-section">
             <div class="form-container-glow" style="width: 100%; max-width: 850px;">
                 <form method="POST" class="master-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="edit_id" value="<?php echo $edit_data['id_produto'] ?? ''; ?>">
 
                     <input type="text" name="nome" placeholder="Nome do Produto" value="<?php echo htmlspecialchars($edit_data['nome'] ?? ''); ?>" required>
@@ -211,7 +220,11 @@ if (!$produtos) {
                 <?php endif; ?>
                 <div style="display: flex; gap: 10px; justify-content: center;">
                     <a href="?edit=<?php echo $p['id_produto']; ?>" class="action-btn btn-edit">Editar</a>
-                    <a href="?delete=<?php echo $p['id_produto']; ?>" class="action-btn btn-delete" onclick="return confirm('Apagar este produto permanentemente?')">Remover</a>
+                    <form method="POST" style="margin: 0;" onsubmit="return confirm('Apagar este produto permanentemente?')">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="delete_id" value="<?php echo (int) $p['id_produto']; ?>">
+                        <button type="submit" name="btn_delete_prod" class="action-btn btn-delete">Remover</button>
+                    </form>
                 </div>
             </div>
             <?php endwhile; endif; ?>
