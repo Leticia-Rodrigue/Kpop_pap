@@ -32,7 +32,8 @@ if (isset($_POST['btn_registar'])) {
         if (mysqli_query($conn, $sql)) {
             echo "<script>alert('Conta criada com sucesso! Faça login para entrar.');</script>";
         } else {
-            echo "Erro ao registar: " . mysqli_error($conn);
+            error_log('Erro ao registar utilizador: ' . mysqli_error($conn));
+            echo "<script>alert('Nao foi possivel concluir o registo agora.');</script>";
         }
     }
 }

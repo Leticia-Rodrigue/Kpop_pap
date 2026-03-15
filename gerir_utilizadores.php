@@ -34,7 +34,8 @@ if ($isCsrfValid && isset($_POST['btn_update_role'])) {
         header("Location: gerir_utilizadores.php?ok=1");
         exit();
     } else {
-        $msg = "Erro ao atualizar cargo: " . mysqli_error($conn);
+        error_log('Erro a atualizar cargo de utilizador: ' . mysqli_error($conn));
+        $msg = "Nao foi possivel atualizar o cargo.";
         $msg_type = "error";
     }
 }
@@ -53,7 +54,8 @@ if ($isCsrfValid && isset($_POST['btn_delete_user'])) {
         header("Location: gerir_utilizadores.php?ok=1");
         exit();
     } else {
-        $msg = "Erro ao remover utilizador: " . mysqli_error($conn);
+        error_log('Erro a remover utilizador: ' . mysqli_error($conn));
+        $msg = "Nao foi possivel remover o utilizador.";
         $msg_type = "error";
     }
 }
@@ -64,6 +66,11 @@ if (isset($_GET['ok'])) {
 }
 
 $utilizadores = mysqli_query($conn, "SELECT * FROM utilizadores ORDER BY role ASC, nome ASC");
+if (!$utilizadores) {
+    error_log('Erro a carregar utilizadores: ' . mysqli_error($conn));
+    $msg = "Nao foi possivel carregar a lista de utilizadores.";
+    $msg_type = "error";
+}
 ?>
 
 <!DOCTYPE html>

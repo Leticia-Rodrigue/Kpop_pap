@@ -24,6 +24,7 @@ if (!function_exists('ensure_password_reset_table')) {
         mysqli_query($conn, "DELETE FROM password_reset_tokens WHERE used_at IS NOT NULL OR expires_at < NOW()");
     }
 
+    // A resposta e generica mesmo quando o email nao existe para nao revelar que contas estao registadas.
     function request_password_reset(mysqli $conn, string $email): bool
     {
         if (!ensure_password_reset_table($conn)) {
@@ -148,6 +149,8 @@ if (!function_exists('ensure_password_reset_table')) {
         }
 
         $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+
+        // Password e token sao atualizados na mesma transacao para evitar estados inconsistentes.
         mysqli_begin_transaction($conn);
 
         try {

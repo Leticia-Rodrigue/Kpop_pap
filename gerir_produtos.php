@@ -38,7 +38,8 @@ if ($isCsrfValid && isset($_POST['btn_save_prod'])) {
         header("Location: gerir_produtos.php?ok=1");
         exit();
     } else {
-        $msg      = "Erro SQL: " . mysqli_error($conn);
+        error_log('Erro a guardar produto: ' . mysqli_error($conn));
+        $msg      = "Nao foi possivel guardar o produto.";
         $msg_type = "error";
     }
 }
@@ -54,7 +55,8 @@ if ($isCsrfValid && isset($_POST['btn_delete_prod'])) {
         header("Location: gerir_produtos.php?ok=1");
         exit();
     } else {
-        $msg      = "Erro ao apagar: " . mysqli_error($conn);
+        error_log('Erro a apagar produto: ' . mysqli_error($conn));
+        $msg      = "Nao foi possivel remover o produto.";
         $msg_type = "error";
     }
 }
@@ -68,7 +70,8 @@ if (isset($_GET['edit'])) {
 
 $produtos = mysqli_query($conn, "SELECT * FROM produtos ORDER BY id_produto DESC");
 if (!$produtos) {
-    $msg      = "Erro ao carregar produtos: " . mysqli_error($conn);
+    error_log('Erro a carregar produtos: ' . mysqli_error($conn));
+    $msg      = "Nao foi possivel carregar a lista de produtos.";
     $msg_type = "error";
 }
 ?>

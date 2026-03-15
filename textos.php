@@ -1,5 +1,6 @@
 <?php
-function getTextos(PDO $pdo, array $slugs){
+function getTextos(PDO $pdo, array $slugs)
+{
     if (empty($slugs)) {
         return [];
     }
@@ -23,9 +24,9 @@ function getTextos(PDO $pdo, array $slugs){
     }
 
     return $textos;
-
 }
 
+// Este helper funciona como um mini CMS (sistema de gestão de conteúdo): atualiza se o slug existir e cria se ainda nao existir.
 function saveTextos(PDO $pdo, array $conteudos): bool
 {
     if (empty($conteudos)) {
@@ -68,5 +69,3 @@ function saveTextos(PDO $pdo, array $conteudos): bool
         return false;
     }
 }
-
-?>

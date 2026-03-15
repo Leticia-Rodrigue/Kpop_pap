@@ -11,6 +11,7 @@ $editingSection = $isEditMode ? ($_GET['edit_section'] ?? '') : '';
 $siteEditMessage = '';
 $siteEditMessageType = 'success';
 
+// Estes slugs identificam os blocos da homepage que ja vivem na tabela conteudos_paginas.
 $slug = [
     'Titulo_Historia_Evolucao',
     'texto1_historia',
@@ -23,18 +24,12 @@ $slug = [
     'texto_grupo_destaque2',
     'subtitulo_grupo_destaque3',
     'texto_grupo_destaque3'
-
 ];
 
-// bd_connection.php usa $conn (mysqli) — converter para PDO ou usar $conn diretamente
-// Verifica qual está disponível
+// A home continua a abrir mesmo que o PDO falhe; nesse caso os textos dinamicos ficam vazios.
 $textos = [];
-if (isset($pdo)) {
+if (isset($pdo) && $pdo instanceof PDO) {
     $textos = getTextos($pdo, $slug);
-} elseif (isset($conn)) {
-    // Se getTextos espera PDO mas só existe $conn, usa textos em branco
-    // (substitui getTextos por versão mysqli ou deixa vazio)
-    $textos = [];
 }
 if (!is_array($textos)) {
     $textos = [];
@@ -58,6 +53,7 @@ if (!function_exists('indexTextValue')) {
     }
 }
 
+// Prova de conceito: por agora so a secao da historia entra em modo de edicao inline.
 $historySlugs = [
     'Titulo_Historia_Evolucao',
     'texto1_historia',
@@ -70,6 +66,7 @@ foreach ($historySlugs as $historySlug) {
     $historyValues[$historySlug] = indexTextValue($textos, $historySlug);
 }
 
+// Guarda os slugs editaveis da historia usando o mesmo mecanismo dinamico do resto da homepage.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['btn_save_history_section'])) {
     if (!$canEditSite) {
         header('Location: index.php');
@@ -374,19 +371,19 @@ if ($isEditMode && (($_GET['saved'] ?? '') === 'historia')) {
         </section>
 
         <section class="featured-groups">
-            <h2 class="section-title"><?php echo $textos['titulo_detaques'] ?? ''; ?></h2>
+            <h2 class="section-title"><?php echo indexTextPlain(indexTextValue($textos, 'titulo_detaques')); ?></h2>
             <div class="grid-container">
                 <div class="card" data-aos="fade-up">
                     <div class="card-bg" style="background-image: url('img/bts.png');"></div>
-                    <div class="card-overlay"><h3><?php echo $textos['subtitulo_grupo_destaque1'] ?? ''; ?></h3><p><?php echo $textos['texto_grupo_destaque1'] ?? ''; ?></p></div>
+                    <div class="card-overlay"><h3><?php echo indexTextPlain(indexTextValue($textos, 'subtitulo_grupo_destaque1')); ?></h3><p><?php echo indexTextParagraph(indexTextValue($textos, 'texto_grupo_destaque1')); ?></p></div>
                 </div>
                 <div class="card" data-aos="fade-up" data-aos-delay="200">
                     <div class="card-bg" style="background-image: url('img/jump1.jpg');"></div>
-                    <div class="card-overlay"><h3><?php echo $textos['subtitulo_grupo_destaque2'] ?? ''; ?></h3><p><?php echo $textos['texto_grupo_destaque2'] ?? ''; ?></p></div>
+                    <div class="card-overlay"><h3><?php echo indexTextPlain(indexTextValue($textos, 'subtitulo_grupo_destaque2')); ?></h3><p><?php echo indexTextParagraph(indexTextValue($textos, 'texto_grupo_destaque2')); ?></p></div>
                 </div>
                 <div class="card" data-aos="fade-up" data-aos-delay="400">
                     <div class="card-bg" style="background-image: url('img/riize.jpg');"></div>
-                    <div class="card-overlay"><h3><?php echo $textos['subtitulo_grupo_destaque3'] ?? ''; ?></h3><p><?php echo $textos['texto_grupo_destaque3'] ?? ''; ?></p></div>
+                    <div class="card-overlay"><h3><?php echo indexTextPlain(indexTextValue($textos, 'subtitulo_grupo_destaque3')); ?></h3><p><?php echo indexTextParagraph(indexTextValue($textos, 'texto_grupo_destaque3')); ?></p></div>
                 </div>
             </div>
         </section>

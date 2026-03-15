@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/app_settings.php';
 
+// Toda a configuracao sensivel vem de app_settings.local.php ou de variaveis de ambiente.
 $appSettings = load_app_settings();
 $host = app_setting($appSettings, 'db.host');
 $user = app_setting($appSettings, 'db.user');
@@ -18,7 +19,7 @@ if (!$host || !$user || !$dbname) {
     die('Erro interno de configuracao.');
 }
 
-// Ligação mysqli (usada na maioria das páginas)
+// O projeto ainda mistura mysqli e PDO: mysqli serve a maioria das paginas e PDO o mini CMS de textos.
 $conn = mysqli_connect($host, $user, $pass, $dbname);
 if (!$conn) {
     error_log('MySQL connection failed: ' . mysqli_connect_error());
@@ -35,4 +36,3 @@ try {
     $pdo = null;
     error_log("PDO connection failed: " . $e->getMessage());
 }
-?>

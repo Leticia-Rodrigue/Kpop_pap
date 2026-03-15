@@ -14,9 +14,11 @@ $sql = "SELECT * FROM grupos
 
 $res = mysqli_query($conn, $sql);
 
-// 2. Verificação de erro (Isto evita o Fatal Error e diz-te o que está mal)
+// 2. Verificacao de erro: o detalhe fica nos logs e nao e mostrado ao utilizador final.
 if (!$res) {
-    die("Erro na Base de Dados: " . mysqli_error($conn));
+    error_log('Erro a carregar grupos: ' . mysqli_error($conn));
+    http_response_code(500);
+    die("Nao foi possivel carregar os grupos neste momento.");
 }
 
 $grupos = [];

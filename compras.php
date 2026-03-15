@@ -14,13 +14,11 @@ $query = "SELECT p.nome, p.imagem_url, v.data_venda, p.preco, v.referencia, v.qu
 
 $compras = mysqli_query($conn, $query);
 
-// VERIFICAÇÃO DE SEGURANÇA: Se a query der erro (ex: falta a coluna na BD)
+// Se a query falhar, o utilizador recebe uma mensagem generica e o detalhe fica apenas nos logs.
 if (!$compras) {
-    die("<div style='color:white; background:red; padding:20px;'>
-            Erro na Base de Dados: " . mysqli_error($conn) . "<br><br>
-            <b>Dica:</b> Executa este comando no teu phpMyAdmin (separador SQL): <br>
-            <code style='background:#000; padding:5px;'>ALTER TABLE vendas ADD COLUMN referencia VARCHAR(50) AFTER id_produto;</code>
-         </div>");
+    error_log('Erro a carregar compras do utilizador: ' . mysqli_error($conn));
+    http_response_code(500);
+    die("Nao foi possivel carregar as compras neste momento.");
 }
 
 // 2. AGRUPAR OS RESULTADOS POR REFERÊNCIA

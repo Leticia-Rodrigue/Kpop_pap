@@ -24,7 +24,8 @@ if (isset($_POST['btn_save'])) {
     $res_update = mysqli_query($conn, $sql_update);
 
     if (!$res_update) {
-        $msg = "Erro ao atualizar dados: " . mysqli_error($conn);
+        error_log('Erro a atualizar perfil: ' . mysqli_error($conn));
+        $msg = "Nao foi possivel atualizar os teus dados.";
         $msg_type = "error";
     } else {
         $_SESSION['username'] = $nome_post;
@@ -40,7 +41,8 @@ if (isset($_POST['btn_save'])) {
             if ($res_pass) {
                 $msg = "Perfil e password atualizados com sucesso!";
             } else {
-                $msg = "Dados atualizados, mas erro na password: " . mysqli_error($conn);
+                error_log('Erro a atualizar password no perfil: ' . mysqli_error($conn));
+                $msg = "Os dados foram atualizados, mas nao foi possivel mudar a password.";
                 $msg_type = "error";
             }
         }
@@ -50,7 +52,9 @@ if (isset($_POST['btn_save'])) {
 // BUSCAR DADOS ATUALIZADOS
 $query_perfil = mysqli_query($conn, "SELECT * FROM utilizadores WHERE id_utilizador = $user_id");
 if (!$query_perfil) {
-    die("Erro ao carregar perfil: " . mysqli_error($conn));
+    error_log('Erro a carregar perfil: ' . mysqli_error($conn));
+    http_response_code(500);
+    die("Nao foi possivel carregar o perfil.");
 }
 $dados_utilizador = mysqli_fetch_assoc($query_perfil);
 ?>

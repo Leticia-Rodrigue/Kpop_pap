@@ -39,7 +39,14 @@ if ($isCsrfValid && isset($_POST['btn_save_group'])) {
     } else {
         $sql = "INSERT INTO grupos (nome_grupo, tag, genero, descricao, foto_url, membros, empresa, data_debut, insta_link, yt_link, tt_link) VALUES ('$nome', '$tag', '$genero', '$desc', '$foto', '$membros', '$empresa', '$debut', '$insta', '$yt', '$tt')";
     }
-    if (mysqli_query($conn, $sql)) { header("Location: gerir_grupos.php?ok=1"); exit(); }
+    if (mysqli_query($conn, $sql)) {
+        header("Location: gerir_grupos.php?ok=1");
+        exit();
+    }
+
+    error_log('Erro a guardar grupo: ' . mysqli_error($conn));
+    $msg = "Nao foi possivel guardar o grupo.";
+    $msg_type = "error";
 }
 
 // Lógica para Apagar
@@ -50,7 +57,8 @@ if ($isCsrfValid && isset($_POST['btn_delete_group'])) {
         exit();
     }
 
-    $msg = "Erro ao apagar grupo: " . mysqli_error($conn);
+    error_log('Erro a apagar grupo: ' . mysqli_error($conn));
+    $msg = "Nao foi possivel remover o grupo.";
     $msg_type = "error";
 }
 
@@ -66,6 +74,11 @@ if (isset($_GET['edit'])) {
 }
 
 $grupos = mysqli_query($conn, "SELECT * FROM grupos ORDER BY id_grupo DESC");
+if (!$grupos) {
+    error_log('Erro a carregar grupos: ' . mysqli_error($conn));
+    $msg = "Nao foi possivel carregar a lista de grupos.";
+    $msg_type = "error";
+}
 ?>
 
 <!DOCTYPE html>

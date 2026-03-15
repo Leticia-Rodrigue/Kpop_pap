@@ -39,6 +39,7 @@ if (!function_exists('app_default_settings')) {
         $settings = app_default_settings();
         $localFile = __DIR__ . '/app_settings.local.php';
 
+        // O ficheiro local permite ter credenciais fora do Git sem mexer no codigo principal.
         if (is_file($localFile)) {
             $overrides = require $localFile;
             if (is_array($overrides)) {

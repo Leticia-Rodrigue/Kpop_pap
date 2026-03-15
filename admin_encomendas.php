@@ -19,10 +19,9 @@ $query = "SELECT u.nome as cliente, p.nome as produto, p.imagem_url, v.data_vend
 $res = mysqli_query($conn, $query);
 
 if (!$res) {
-    die("<div style='color:white; background:red; padding:20px;'>
-            <h2>Erro na Consulta SQL</h2>
-            <p>" . mysqli_error($conn) . "</p>
-         </div>");
+    error_log('Erro a carregar encomendas globais: ' . mysqli_error($conn));
+    http_response_code(500);
+    die("Nao foi possivel carregar as encomendas neste momento.");
 }
 
 $encomendas_globais = [];

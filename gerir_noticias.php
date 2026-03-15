@@ -37,7 +37,8 @@ if ($isCsrfValid && isset($_POST['btn_save_news'])) {
         header("Location: gerir_noticias.php?ok=news");
         exit();
     } else {
-        $msg      = "Erro SQL (Notícia): " . mysqli_error($conn);
+        error_log('Erro a guardar noticia: ' . mysqli_error($conn));
+        $msg      = "Nao foi possivel guardar a noticia.";
         $msg_type = "error";
     }
 }
@@ -62,7 +63,8 @@ if ($isCsrfValid && isset($_POST['btn_save_agenda'])) {
         header("Location: gerir_noticias.php?ok=agenda#agenda_section");
         exit();
     } else {
-        $msg      = "Erro SQL (Agenda): " . mysqli_error($conn);
+        error_log('Erro a guardar show na agenda: ' . mysqli_error($conn));
+        $msg      = "Nao foi possivel guardar o show na agenda.";
         $msg_type = "error";
     }
 }
@@ -74,7 +76,8 @@ if ($isCsrfValid && isset($_POST['btn_delete_news'])) {
         header("Location: gerir_noticias.php?ok=news");
         exit();
     } else {
-        $msg = "Erro ao apagar notícia: " . mysqli_error($conn);
+        error_log('Erro a apagar noticia: ' . mysqli_error($conn));
+        $msg = "Nao foi possivel remover a noticia.";
         $msg_type = "error";
     }
 }
@@ -84,7 +87,8 @@ if ($isCsrfValid && isset($_POST['btn_delete_agenda'])) {
         header("Location: gerir_noticias.php?ok=agenda#agenda_section");
         exit();
     } else {
-        $msg = "Erro ao apagar show: " . mysqli_error($conn);
+        error_log('Erro a apagar show: ' . mysqli_error($conn));
+        $msg = "Nao foi possivel remover o show.";
         $msg_type = "error";
     }
 }
@@ -113,8 +117,8 @@ if (isset($_GET['edit_agenda'])) {
 $noticias = mysqli_query($conn, "SELECT * FROM noticias ORDER BY id_noticia DESC");
 $agenda   = mysqli_query($conn, "SELECT * FROM agenda_shows ORDER BY ordem_data ASC");
 
-if (!$noticias) { $msg = "Erro ao carregar notícias: " . mysqli_error($conn); $msg_type = "error"; }
-if (!$agenda)   { $msg = "Erro ao carregar agenda: "   . mysqli_error($conn); $msg_type = "error"; }
+if (!$noticias) { error_log('Erro a carregar noticias: ' . mysqli_error($conn)); $msg = "Nao foi possivel carregar as noticias."; $msg_type = "error"; }
+if (!$agenda)   { error_log('Erro a carregar agenda: ' . mysqli_error($conn)); $msg = "Nao foi possivel carregar a agenda."; $msg_type = "error"; }
 ?>
 <!DOCTYPE html>
 <html lang="pt-pt">

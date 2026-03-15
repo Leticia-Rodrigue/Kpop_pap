@@ -9,7 +9,9 @@ $query = "SELECT * FROM produtos ORDER BY id_produto DESC";
 $res_produtos = mysqli_query($conn, $query);
 
 if (!$res_produtos) {
-    die("Erro na consulta SQL: " . mysqli_error($conn));
+    error_log('Erro a carregar produtos da loja: ' . mysqli_error($conn));
+    http_response_code(500);
+    die("Nao foi possivel carregar a loja neste momento.");
 }
 
 $total_db = mysqli_num_rows($res_produtos);
