@@ -269,21 +269,24 @@ main {
     background-color: #000;
 }
 
-/* Imagem de Fundo com Zoom */
+/* Imagem de Fundo com Zoom — funciona como <img> tag */
 .card-bg {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-size: cover;
-    background-position: center;
+    object-fit: cover;
+    object-position: center;
     transition: transform 0.8s ease;
     z-index: 1;
+    /* fallback para divs com background-image */
+    background-size: cover;
+    background-position: center;
 }
 
 .card:hover .card-bg {
-    transform: scale(1.1); /* Efeito de zoom na imagem */
+    transform: scale(1.1);
 }
 
 /* Overlay de Vidro (Glassmorphism) */
@@ -439,3 +442,161 @@ main {
     border-top: 1px solid #222;
     margin-top: auto; 
 }
+
+/* --- ESTILOS INLINE MOVIDOS DO INDEX.PHP --- */
+.edit-mode-banner {
+            max-width: 1180px;
+            margin: 30px auto 10px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            background: rgba(5, 20, 28, 0.82);
+            color: #d7f8ff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            backdrop-filter: blur(10px);
+        }
+        .edit-mode-banner a {
+            color: #00d4ff;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .editable-section-shell {
+            position: relative;
+            border: 1px dashed rgba(0, 212, 255, 0.18);
+            border-radius: 28px;
+            padding: 22px;
+            margin-top: 20px;
+        }
+        .section-edit-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 18px;
+        }
+        .edit-toggle-btn,
+        .edit-mode-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 212, 255, 0.22);
+            background: rgba(0, 212, 255, 0.08);
+            color: #00d4ff;
+            text-decoration: none;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+        .edit-feedback {
+            max-width: 1100px;
+            margin: 0 auto 18px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-size: 0.86rem;
+            font-weight: 600;
+        }
+        .edit-feedback.success {
+            background: rgba(0, 212, 100, 0.08);
+            border: 1px solid rgba(0, 212, 100, 0.24);
+            color: #00d464;
+        }
+        .edit-feedback.error {
+            background: rgba(255, 68, 102, 0.08);
+            border: 1px solid rgba(255, 68, 102, 0.24);
+            color: #ff6b88;
+        }
+        .inline-edit-card {
+            width: 100%;
+        }
+        .edit-title-input,
+        .edit-paragraph-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            color: #fff;
+            outline: none;
+            font-family: inherit;
+        }
+        .edit-title-input {
+            max-width: 580px;
+            padding: 14px 18px;
+            text-align: center;
+            font-size: clamp(1.5rem, 3vw, 2.3rem);
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .edit-paragraph-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .edit-paragraph-input {
+            min-height: 110px;
+            padding: 16px 18px;
+            resize: vertical;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+        .edit-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .edit-save-btn,
+        .edit-cancel-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 150px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            text-decoration: none;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .edit-save-btn {
+            border: none;
+            background: linear-gradient(45deg, #00c9ff, #00d4ff);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
+        }
+        .edit-cancel-btn {
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: transparent;
+            color: #bbb;
+        }
+        @media (max-width: 768px) {
+            .edit-mode-banner {
+                margin: 20px 16px 10px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .editable-section-shell {
+                padding: 16px;
+            }
+            .edit-title-input {
+                max-width: 100%;
+            }
+            .edit-actions {
+                flex-direction: column;
+            }
+            .edit-save-btn,
+            .edit-cancel-btn {
+                width: 100%;
+            }
+        }

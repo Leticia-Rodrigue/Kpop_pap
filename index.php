@@ -35,6 +35,17 @@ if (!is_array($textos)) {
     $textos = [];
 }
 
+// Carregar grupos em destaque da BD
+$destaque_grupos = [];
+$nomes_destaque = ['BTS', 'BLACKPINK', 'RIIZE'];
+$nomes_sql = "'" . implode("','", $nomes_destaque) . "'";
+$res_dest = mysqli_query($conn, "SELECT nome_grupo, foto_url FROM grupos WHERE nome_grupo IN ($nomes_sql)");
+if ($res_dest) {
+    while ($d = mysqli_fetch_assoc($res_dest)) {
+        $destaque_grupos[$d['nome_grupo']] = $d['foto_url'];
+    }
+}
+
 if (!function_exists('indexTextValue')) {
     function indexTextValue(array $textos, string $slug): string
     {
@@ -99,6 +110,53 @@ if ($isEditMode && (($_GET['saved'] ?? '') === 'historia')) {
     $siteEditMessage = 'Secção atualizada com sucesso!';
     $siteEditMessageType = 'success';
 }
+
+// ── UPLOAD IMAGEM HISTÓRIA ──
+if ($canEditSite && isset($_POST['btn_upload_historia'])) {
+    if (!empty($_FILES['img_historia']['name'])) {
+        $ext     = strtolower(pathinfo($_FILES['img_historia']['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg','jpeg','png','webp','gif'];
+        if (in_array($ext, $allowed)) {
+            $filename = 'geracoes-kpop.' . $ext;
+            if (move_uploaded_file($_FILES['img_historia']['tmp_name'], 'img/' . $filename)) {
+                $siteEditMessage     = 'Imagem da história atualizada!';
+                $siteEditMessageType = 'success';
+            } else {
+                $siteEditMessage     = 'Erro ao guardar a imagem.';
+                $siteEditMessageType = 'error';
+            }
+        } else {
+            $siteEditMessage     = 'Formato inválido. Usa JPG, PNG ou WEBP.';
+            $siteEditMessageType = 'error';
+        }
+    }
+}
+
+// ── UPLOAD IMAGEM CARD DESTAQUE ──
+if ($canEditSite && isset($_POST['btn_upload_card'])) {
+    $nome_grupo = $_POST['nome_grupo_card'] ?? '';
+    if (!empty($_FILES['img_card']['name']) && !empty($nome_grupo)) {
+        $ext     = strtolower(pathinfo($_FILES['img_card']['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg','jpeg','png','webp','gif'];
+        if (in_array($ext, $allowed)) {
+            if (!is_dir('img/grupos')) { mkdir('img/grupos', 0755, true); }
+            $filename = 'grupo_' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $nome_grupo)) . '.' . $ext;
+            if (move_uploaded_file($_FILES['img_card']['tmp_name'], 'img/grupos/' . $filename)) {
+                $url_safe = mysqli_real_escape_string($conn, 'img/grupos/' . $filename);
+                $nome_safe = mysqli_real_escape_string($conn, $nome_grupo);
+                mysqli_query($conn, "UPDATE grupos SET foto_url='$url_safe' WHERE nome_grupo='$nome_safe'");
+                $siteEditMessage     = "Imagem de $nome_grupo atualizada!";
+                $siteEditMessageType = 'success';
+            } else {
+                $siteEditMessage     = 'Erro ao guardar a imagem.';
+                $siteEditMessageType = 'error';
+            }
+        } else {
+            $siteEditMessage     = 'Formato inválido.';
+            $siteEditMessageType = 'error';
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-pt">
@@ -110,163 +168,23 @@ if ($isEditMode && (($_GET['saved'] ?? '') === 'historia')) {
     <link rel="stylesheet" href="css/style_index.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
     <style>
-        .edit-mode-banner {
-            max-width: 1180px;
-            margin: 30px auto 10px;
-            padding: 14px 18px;
-            border-radius: 16px;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            background: rgba(5, 20, 28, 0.82);
-            color: #d7f8ff;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            backdrop-filter: blur(10px);
+        .upload-label {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer;
+            border: 1px dashed rgba(0,212,255,0.4); color: #00d4ff;
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; transition: all 0.3s; background: rgba(0,212,255,0.05);
         }
-        .edit-mode-banner a {
-            color: #00d4ff;
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+        .upload-label:hover { background: rgba(0,212,255,0.12); border-color: rgba(0,212,255,0.7); }
+        .upload-btn {
+            padding: 8px 16px; border-radius: 8px; border: none;
+            background: linear-gradient(45deg, #ff00ff, #00d4ff);
+            color: #000; font-weight: 800; font-size: 0.72rem;
+            letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: 0.3s;
         }
-        .editable-section-shell {
-            position: relative;
-            border: 1px dashed rgba(0, 212, 255, 0.18);
-            border-radius: 28px;
-            padding: 22px;
-            margin-top: 20px;
-        }
-        .section-edit-toolbar {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 18px;
-        }
-        .edit-toggle-btn,
-        .edit-mode-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            border-radius: 999px;
-            border: 1px solid rgba(0, 212, 255, 0.22);
-            background: rgba(0, 212, 255, 0.08);
-            color: #00d4ff;
-            text-decoration: none;
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-        }
-        .edit-feedback {
-            max-width: 1100px;
-            margin: 0 auto 18px;
-            padding: 14px 18px;
-            border-radius: 14px;
-            font-size: 0.86rem;
-            font-weight: 600;
-        }
-        .edit-feedback.success {
-            background: rgba(0, 212, 100, 0.08);
-            border: 1px solid rgba(0, 212, 100, 0.24);
-            color: #00d464;
-        }
-        .edit-feedback.error {
-            background: rgba(255, 68, 102, 0.08);
-            border: 1px solid rgba(255, 68, 102, 0.24);
-            color: #ff6b88;
-        }
-        .inline-edit-card {
-            width: 100%;
-        }
-        .edit-title-input,
-        .edit-paragraph-input {
-            width: 100%;
-            box-sizing: border-box;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 16px;
-            color: #fff;
-            outline: none;
-            font-family: inherit;
-        }
-        .edit-title-input {
-            max-width: 580px;
-            padding: 14px 18px;
-            text-align: center;
-            font-size: clamp(1.5rem, 3vw, 2.3rem);
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            background: rgba(255, 255, 255, 0.06);
-        }
-        .edit-paragraph-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-        .edit-paragraph-input {
-            min-height: 110px;
-            padding: 16px 18px;
-            resize: vertical;
-            font-size: 1rem;
-            line-height: 1.7;
-        }
-        .edit-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 8px;
-            flex-wrap: wrap;
-        }
-        .edit-save-btn,
-        .edit-cancel-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 150px;
-            padding: 12px 18px;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            font-weight: 800;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-            text-decoration: none;
-            font-family: inherit;
-            cursor: pointer;
-        }
-        .edit-save-btn {
-            border: none;
-            background: linear-gradient(45deg, #00c9ff, #00d4ff);
-            color: #000;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
-        }
-        .edit-cancel-btn {
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: transparent;
-            color: #bbb;
-        }
-        @media (max-width: 768px) {
-            .edit-mode-banner {
-                margin: 20px 16px 10px;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .editable-section-shell {
-                padding: 16px;
-            }
-            .edit-title-input {
-                max-width: 100%;
-            }
-            .edit-actions {
-                flex-direction: column;
-            }
-            .edit-save-btn,
-            .edit-cancel-btn {
-                width: 100%;
-            }
-        }
+        .upload-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,212,255,0.3); }
     </style>
 </head>
 <body>
@@ -324,7 +242,7 @@ if ($isEditMode && (($_GET['saved'] ?? '') === 'historia')) {
                 </div>
             <?php endif; ?>
 
-            <?php if ($siteEditMessage !== '' && ($editingSection === 'historia' || (($_GET['saved'] ?? '') === 'historia'))): ?>
+            <?php if ($siteEditMessage !== ''): ?>
                 <div class="edit-feedback <?php echo $siteEditMessageType; ?>"><?php echo htmlspecialchars($siteEditMessage); ?></div>
             <?php endif; ?>
 
@@ -364,27 +282,56 @@ if ($isEditMode && (($_GET['saved'] ?? '') === 'historia')) {
                         <p><?php echo indexTextParagraph(indexTextValue($textos, 'texto3_historia')); ?></p>
                     </div>
                     <div class="sobre-imagem">
-                        <img src="img/geracoes-kpop.jpg" alt="BTS Group Performance" class="img-neon">
+                        <img src="img/geracoes-kpop.jpg" alt="BTS Group Performance" class="img-neon" id="prevHistoria">
                     </div>
                 </div>
+                <?php if ($isEditMode): ?>
+                <form method="POST" action="index.php?edit_mode=1" enctype="multipart/form-data" style="margin-top:20px; display:flex; gap:10px; align-items:center; justify-content:flex-end;">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                    <label class="upload-label">
+                        <i class="fas fa-upload"></i> Nova imagem da secção
+                        <input type="file" name="img_historia" accept="image/*" onchange="previewEdit(this,'prevHistoria')" style="display:none">
+                    </label>
+                    <button type="submit" name="btn_upload_historia" class="upload-btn">Guardar</button>
+                </form>
+                <?php endif; ?>
             <?php endif; ?>
         </section>
 
         <section class="featured-groups">
             <h2 class="section-title"><?php echo indexTextPlain(indexTextValue($textos, 'titulo_detaques')); ?></h2>
             <div class="grid-container">
-                <div class="card" data-aos="fade-up">
-                    <div class="card-bg" style="background-image: url('img/bts.png');"></div>
-                    <div class="card-overlay"><h3><?php echo indexTextPlain(indexTextValue($textos, 'subtitulo_grupo_destaque1')); ?></h3><p><?php echo indexTextParagraph(indexTextValue($textos, 'texto_grupo_destaque1')); ?></p></div>
+                <?php
+                $destaques_config = [
+                    ['nome'=>'BTS',      'fallback'=>'img/bts.png',   'slug1'=>'subtitulo_grupo_destaque1','slug2'=>'texto_grupo_destaque1','delay'=>''],
+                    ['nome'=>'BLACKPINK','fallback'=>'img/jump1.jpg', 'slug1'=>'subtitulo_grupo_destaque2','slug2'=>'texto_grupo_destaque2','delay'=>'200'],
+                    ['nome'=>'RIIZE',    'fallback'=>'img/riize.jpg', 'slug1'=>'subtitulo_grupo_destaque3','slug2'=>'texto_grupo_destaque3','delay'=>'400'],
+                ];
+                foreach ($destaques_config as $dc):
+                    $dc_img = $destaque_grupos[$dc['nome']] ?? $dc['fallback'];
+                    $dc_id  = 'prev' . $dc['nome'];
+                ?>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <div class="card" data-aos="fade-up" <?php echo $dc['delay'] ? 'data-aos-delay="'.$dc['delay'].'"' : ''; ?>>
+                        <img class="card-bg" id="<?php echo $dc_id; ?>" src="<?php echo htmlspecialchars($dc_img); ?>" referrerpolicy="no-referrer" alt="<?php echo $dc['nome']; ?>" onerror="this.src='<?php echo $dc['fallback']; ?>'">
+                        <div class="card-overlay">
+                            <h3><?php echo indexTextPlain(indexTextValue($textos, $dc['slug1'])); ?></h3>
+                            <p><?php echo indexTextParagraph(indexTextValue($textos, $dc['slug2'])); ?></p>
+                        </div>
+                    </div>
+                    <?php if ($isEditMode): ?>
+                    <form method="POST" action="index.php?edit_mode=1" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="nome_grupo_card" value="<?php echo $dc['nome']; ?>">
+                        <label class="upload-label" style="flex:1;">
+                            <i class="fas fa-upload"></i> <?php echo $dc['nome']; ?>
+                            <input type="file" name="img_card" accept="image/*" onchange="previewEdit(this,'<?php echo $dc_id; ?>')" style="display:none">
+                        </label>
+                        <button type="submit" name="btn_upload_card" class="upload-btn">Guardar</button>
+                    </form>
+                    <?php endif; ?>
                 </div>
-                <div class="card" data-aos="fade-up" data-aos-delay="200">
-                    <div class="card-bg" style="background-image: url('img/jump1.jpg');"></div>
-                    <div class="card-overlay"><h3><?php echo indexTextPlain(indexTextValue($textos, 'subtitulo_grupo_destaque2')); ?></h3><p><?php echo indexTextParagraph(indexTextValue($textos, 'texto_grupo_destaque2')); ?></p></div>
-                </div>
-                <div class="card" data-aos="fade-up" data-aos-delay="400">
-                    <div class="card-bg" style="background-image: url('img/riize.jpg');"></div>
-                    <div class="card-overlay"><h3><?php echo indexTextPlain(indexTextValue($textos, 'subtitulo_grupo_destaque3')); ?></h3><p><?php echo indexTextParagraph(indexTextValue($textos, 'texto_grupo_destaque3')); ?></p></div>
-                </div>
+                <?php endforeach; ?>
             </div>
         </section>
     </main>
@@ -426,7 +373,15 @@ if ($isEditMode && (($_GET['saved'] ?? '') === 'historia')) {
                     events: {
                         'onReady': (e) => {
                             e.target.mute();
+                            e.target.setPlaybackQuality('hd1080');
                             if (i === 0) e.target.playVideo();
+                        },
+                        'onPlaybackQualityChange': (e) => {
+                            // Forçar hd1080 se mudar automaticamente
+                            const q = e.target.getPlaybackQuality();
+                            if (q !== 'hd1080' && q !== 'highres') {
+                                e.target.setPlaybackQuality('hd1080');
+                            }
                         }
                     }
                 });
@@ -448,6 +403,7 @@ if ($isEditMode && (($_GET['saved'] ?? '') === 'historia')) {
             if (ytReady) {
                 try { players[prev].pauseVideo(); } catch(e) {}
                 try {
+                    players[current].setPlaybackQuality('hd1080');
                     players[current].playVideo();
                     if (!isMuted) { players[current].unMute(); players[current].setVolume(volume); }
                 } catch(e) {}
@@ -511,6 +467,15 @@ if ($isEditMode && (($_GET['saved'] ?? '') === 'historia')) {
                 if (action === 'volume') players[current].setVolume(val);
             } catch(e) {}
         }
+    </script>
+    <script>
+    function previewEdit(input, imgId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => { document.getElementById(imgId).src = e.target.result; };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
     </script>
 </body>
 </html>

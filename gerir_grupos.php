@@ -25,13 +25,26 @@ if ($isCsrfValid && isset($_POST['btn_save_group'])) {
     $tag     = mysqli_real_escape_string($conn, $_POST['tag']);
     $genero  = mysqli_real_escape_string($conn, $_POST['genero']);
     $desc    = mysqli_real_escape_string($conn, $_POST['descricao']);
-    $foto    = mysqli_real_escape_string($conn, $_POST['foto_url']); 
     $membros = mysqli_real_escape_string($conn, $_POST['membros']);
     $empresa = mysqli_real_escape_string($conn, $_POST['empresa']);
     $debut   = mysqli_real_escape_string($conn, $_POST['data_debut']);
     $insta   = mysqli_real_escape_string($conn, $_POST['insta_link']);
     $yt      = mysqli_real_escape_string($conn, $_POST['yt_link']);
     $tt      = mysqli_real_escape_string($conn, $_POST['tt_link']);
+
+    // Imagem: upload tem prioridade sobre URL
+    $foto = mysqli_real_escape_string($conn, $_POST['foto_url'] ?? '');
+    if (!empty($_FILES['foto_upload']['name'])) {
+        $ext     = strtolower(pathinfo($_FILES['foto_upload']['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg','jpeg','png','webp','gif'];
+        if (in_array($ext, $allowed)) {
+            if (!is_dir('img/grupos')) { mkdir('img/grupos', 0755, true); }
+            $filename = uniqid('grupo_') . '.' . $ext;
+            if (move_uploaded_file($_FILES['foto_upload']['tmp_name'], 'img/grupos/' . $filename)) {
+                $foto = mysqli_real_escape_string($conn, 'img/grupos/' . $filename);
+            }
+        }
+    }
 
     if (isset($_POST['edit_id']) && !empty($_POST['edit_id'])) {
         $id = intval($_POST['edit_id']);
@@ -231,7 +244,7 @@ if (!$grupos) {
         <?php endif; ?>
 
         <div class="form-container">
-            <form method="POST" class="form-grid">
+            <form method="POST" class="form-grid" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="edit_id" value="<?php echo $edit_data['id_grupo'] ?? ''; ?>">
                 
@@ -248,7 +261,20 @@ if (!$grupos) {
                 <input type="text" name="membros" placeholder="Membros" value="<?php echo $edit_data['membros'] ?? ''; ?>">
                 <input type="text" name="data_debut" placeholder="Ano Debut" value="<?php echo $edit_data['data_debut'] ?? ''; ?>">
 
-                <input type="text" name="foto_url" class="full-width" placeholder="Link da Imagem (URL)" value="<?php echo $edit_data['foto_url'] ?? ''; ?>" required>
+                <div class="full-width" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start;">
+                    <div>
+                        <input type="text" name="foto_url" placeholder="Link da Imagem (URL)" value="<?php echo $edit_data['foto_url'] ?? ''; ?>" oninput="previewImagem(this.value)" style="margin-bottom:0;">
+                    </div>
+                    <div>
+                        <label style="display:flex; align-items:center; gap:8px; padding:12px 15px; border:1px dashed #555; border-radius:8px; cursor:pointer; color:#aaa; font-size:0.82rem; margin-bottom:0; background:rgba(255,255,255,0.03);">
+                            <span>📁</span> Ou fazer upload
+                            <input type="file" name="foto_upload" accept="image/*" style="display:none; margin:0; border:none; padding:0;" onchange="previewUpload(this)">
+                        </label>
+                    </div>
+                </div>
+                <div class="full-width" style="margin-top:-6px;">
+                    <img id="imgPreview" src="<?php echo $edit_data['foto_url'] ?? ''; ?>" style="height:80px; border-radius:8px; object-fit:cover; display:<?php echo !empty($edit_data['foto_url']) ? 'block' : 'none'; ?>; border:1px solid #333;">
+                </div>
 
                 <input type="text" name="insta_link" placeholder="Instagram" value="<?php echo $edit_data['insta_link'] ?? ''; ?>">
                 <input type="text" name="yt_link" placeholder="YouTube" value="<?php echo $edit_data['yt_link'] ?? ''; ?>">
@@ -281,5 +307,23 @@ if (!$grupos) {
         </div>
     </main>
 
+<script>
+function previewImagem(url) {
+    const img = document.getElementById('imgPreview');
+    if (url) { img.src = url; img.style.display = 'block'; img.onerror = () => img.style.display = 'none'; }
+    else { img.style.display = 'none'; }
+}
+function previewUpload(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.getElementById('imgPreview');
+            img.src = e.target.result; img.style.display = 'block';
+            document.querySelector('[name="foto_url"]').value = '';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
 </body>
 </html>

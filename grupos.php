@@ -2,36 +2,18 @@
 require_once 'bd_connection.php';
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
-// 1. Corrigi a Query para usar os nomes de colunas que criámos no gerir_grupos.php
-// Se a tua coluna se chama 'nome_grupo' e não 'nome', mudei aqui:
-$sql = "SELECT * FROM grupos 
-        ORDER BY CASE 
-            WHEN nome_grupo IN ('BLACKPINK','RIIZE','BTS','NewJeans') THEN 0 
-            ELSE 1 
-        END, 
-        FIELD(nome_grupo,'BLACKPINK','RIIZE','BTS','NewJeans'), 
-        RAND()";
-
-$res = mysqli_query($conn, $sql);
-
-// 2. Verificacao de erro: o detalhe fica nos logs e nao e mostrado ao utilizador final.
-if (!$res) {
-    error_log('Erro a carregar grupos: ' . mysqli_error($conn));
-    http_response_code(500);
-    die("Nao foi possivel carregar os grupos neste momento.");
-}
-
 $grupos = [];
-while ($row = mysqli_fetch_assoc($res)) {
-    $grupos[] = $row;
-}
+$res = mysqli_query($conn, "SELECT * FROM grupos ORDER BY CASE WHEN nome_grupo IN ('BLACKPINK','RIIZE','BTS','NewJeans') THEN 0 ELSE 1 END, FIELD(nome_grupo,'BLACKPINK','RIIZE','BTS','NewJeans'), RAND()");
+if (!$res) { die("Não foi possível carregar os grupos: " . mysqli_error($conn)); }
+while ($row = mysqli_fetch_assoc($res)) { $grupos[] = $row; }
 ?>
 <!DOCTYPE html>
 <html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer"> <link rel="icon" type="image/png" href="img/kpop_logo.png">
+    <meta name="referrer" content="no-referrer">
+    <link rel="icon" type="image/png" href="img/kpop_logo.png">
     <title>K-Pop Universe | Grupos</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700;800&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -43,10 +25,7 @@ while ($row = mysqli_fetch_assoc($res)) {
         .social-icons-drawer { display: flex; gap: 20px; }
         .social-icons-drawer a { color: #fff; font-size: 1.8rem; transition: 0.3s; }
         .social-icons-drawer a:hover { color: #00f2fe; transform: translateY(-3px); filter: drop-shadow(0 0 5px #00f2fe); }
-        .social-icons-drawer a[href="#"], .social-icons-drawer a[href=""] { opacity: 0.2; pointer-events: none; }
-        
-        /* Garantir que o background do card funciona com fotos da net */
-        .card { background-size: cover; background-position: center; transition: 0.5s; }
+        .social-icons-drawer a[href="#"] { opacity: 0.2; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -85,24 +64,22 @@ while ($row = mysqli_fetch_assoc($res)) {
     <section class="content-area">
         <div class="grid-container" id="gruposGrid">
             <?php foreach ($grupos as $i => $grupo):
-                // AJUSTE DAS VARIÁVEIS PARA O NOME CORRETO DA BD
-                $imagem = $grupo['foto_url'] ?: 'img/default.jpg';
-                $membros_txt = $grupo['membros'] ? $grupo['membros'] : '—';
-                $delay = ($i % 6) * 100 + 100;
+                $imagem  = $grupo['foto_url'] ?? '';
+                $membros = $grupo['membros'] ? $grupo['membros'] : '—';
+                $delay   = ($i % 6) * 100 + 100;
             ?>
             <div class="card"
-                 data-gen="<?php echo htmlspecialchars($grupo['tag']); ?>"
-                 data-gender="<?php echo htmlspecialchars($grupo['genero']); ?>"
+                 data-gen="<?php echo htmlspecialchars($grupo['tag'] ?? ''); ?>"
+                 data-gender="<?php echo htmlspecialchars($grupo['genero'] ?? ''); ?>"
                  data-aos="fade-up"
-                 data-aos-delay="<?php echo $delay; ?>"
-                 style="background-image: url('<?php echo htmlspecialchars($imagem); ?>');">
-                
+                 data-aos-delay="<?php echo $delay; ?>">
+                <img class="card-bg-img" src="<?php echo htmlspecialchars($imagem); ?>" referrerpolicy="no-referrer" alt="<?php echo htmlspecialchars($grupo['nome_grupo']); ?>" onerror="this.src='img/kpop_logo.png'">
                 <div class="card-overlay">
-                    <span class="tag"><?php echo htmlspecialchars($grupo['tag']); ?></span>
+                    <span class="tag"><?php echo htmlspecialchars($grupo['tag'] ?? ''); ?></span>
                     <h3><?php echo htmlspecialchars($grupo['nome_grupo']); ?></h3>
                     <button class="btn-more" onclick="openProfile(
                         '<?php echo addslashes($grupo['nome_grupo']); ?>',
-                        '<?php echo addslashes($membros_txt); ?>',
+                        '<?php echo addslashes($membros); ?>',
                         '<?php echo addslashes($grupo['empresa'] ?? '—'); ?>',
                         '<?php echo addslashes($grupo['data_debut'] ?? '—'); ?>',
                         '<?php echo addslashes($grupo['descricao'] ?? ''); ?>',
@@ -114,9 +91,8 @@ while ($row = mysqli_fetch_assoc($res)) {
                 </div>
             </div>
             <?php endforeach; ?>
-
             <?php if (empty($grupos)): ?>
-                <p style="color:#555; padding:40px; grid-column:1/-1; text-align:center;">Nenhum grupo encontrado na base de dados.</p>
+                <p style="color:#555; padding:40px; grid-column:1/-1; text-align:center;">Nenhum grupo encontrado.</p>
             <?php endif; ?>
         </div>
     </section>
@@ -129,7 +105,7 @@ while ($row = mysqli_fetch_assoc($res)) {
         <button class="close-btn" onclick="closeProfile()">&times;</button>
     </div>
     <div class="drawer-content">
-        <img id="p-img" src="" alt="" style="width:100%; height:250px; object-fit:cover; border-radius:15px; margin-bottom:20px;">
+        <img id="p-img" src="" alt="" referrerpolicy="no-referrer">
         <div class="info-item"><span>MEMBROS</span> <b id="p-membros"></b></div>
         <div class="info-item"><span>EMPRESA</span> <b id="p-empresa"></b></div>
         <div class="info-item"><span>DEBUT</span> <b id="p-debut"></b></div>
@@ -163,16 +139,9 @@ while ($row = mysqli_fetch_assoc($res)) {
         document.getElementById('p-debut').innerText   = debut;
         document.getElementById('p-desc').innerText    = desc;
         document.getElementById('p-img').src           = img;
-        
-        // Ajuste dos links sociais
-        const instaBtn = document.getElementById('p-insta');
-        const ytBtn = document.getElementById('p-yt');
-        const ttBtn = document.getElementById('p-tt');
-
-        instaBtn.href = (insta && insta !== '#') ? insta : '#';
-        ytBtn.href = (yt && yt !== '#') ? yt : '#';
-        ttBtn.href = (tt && tt !== '#') ? tt : '#';
-
+        document.getElementById('p-insta').href        = insta || "#";
+        document.getElementById('p-yt').href           = yt    || "#";
+        document.getElementById('p-tt').href           = tt    || "#";
         document.getElementById('profileDrawer').classList.add('active');
         document.getElementById('profileOverlay').classList.add('active');
     }
@@ -182,16 +151,13 @@ while ($row = mysqli_fetch_assoc($res)) {
         document.getElementById('profileOverlay').classList.remove('active');
     }
 
-    // Filtros
     document.addEventListener('DOMContentLoaded', function() {
         const checkboxes = document.querySelectorAll('.filter-input');
         const cards      = document.querySelectorAll('.card');
-
         checkboxes.forEach(box => {
             box.addEventListener('change', () => {
                 const activeGens    = Array.from(document.querySelectorAll('.filter-gen:checked')).map(cb => cb.value);
                 const activeGenders = Array.from(document.querySelectorAll('.filter-gender:checked')).map(cb => cb.value);
-                
                 cards.forEach(card => {
                     const genMatch    = activeGens.length    === 0 || activeGens.some(g => card.dataset.gen.includes(g));
                     const genderMatch = activeGenders.length === 0 || activeGenders.includes(card.dataset.gender);
